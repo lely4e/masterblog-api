@@ -49,9 +49,9 @@ def get_posts():
 
         # Input Validation
         if not new_post:
-            return (jsonify({"error": "Empty post data"}), 400)
+            return jsonify({"error": "Empty post data"}), 400
         if not validate_posts_data(new_post):
-            return (jsonify({"error": "Empty title or content"}), 400)
+            return jsonify({"error": "Empty title or content"}), 400
 
         # Add new id
         new_id = get_id()
@@ -64,6 +64,25 @@ def get_posts():
         return jsonify(new_post), 201
 
     # GET: Return all posts
+    return jsonify(POSTS)
+
+
+@app.route("/api/posts/<int:id>", methods=["DELETE", "GET"])
+def delete_post(id):
+    """Deletes post from database"""
+    if request.method == "DELETE":
+        for post in POSTS:
+            if post["id"] == id:
+                POSTS.remove(post)
+                return (
+                    jsonify(
+                        {
+                            f"message": f"Post with id {id} has been deleted successfully."
+                        }
+                    ),
+                    200,
+                )
+        return jsonify({"error": f"Post with id {id} doesn't exist"}), 404
     return jsonify(POSTS)
 
 
