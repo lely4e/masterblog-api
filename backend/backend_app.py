@@ -21,11 +21,6 @@ def get_id():
     )
 
 
-# @app.route('/api/posts', methods=['GET'])
-# def get_posts():
-#     return jsonify(POSTS)
-
-
 def validate_posts_data(data):
     """Input Validation from the user"""
     if "title" not in data or "content" not in data:
@@ -40,7 +35,7 @@ def get_posts():
     """
     Add a new post to database.
 
-    GET: Returns all posts
+    GET: Returns all posts, sorted or not by choice.
     POST: Adds a new post if input is valid.
     """
     if request.method == "POST":
@@ -63,13 +58,28 @@ def get_posts():
         # Return a post
         return jsonify(new_post), 201
 
+    # GET Reguest
+    # Create a sort and direction query parametrs
+    sort_by = request.args.get("sort", default="title")
+    direction = request.args.get("direction", default="asc")
+
+    if sort_by not in ["title", "content"]:
+        return jsonify({"error": f"Sorting by {sort_by} is impossible"}), 400
+
+    if sort_by:
+        reverse = direction.lower() == "desc"
+        sorted_posts = sorted(
+            POSTS, key=lambda post: post.get(sort_by, ""), reverse=reverse
+        )
+        return jsonify(sorted_posts)
+
     # GET: Return all posts
     return jsonify(POSTS)
 
 
 @app.route("/api/posts/<int:id>", methods=["DELETE", "GET"])
 def delete_post(id):
-    """Deletes post from database"""
+    """Delete post from database"""
     if request.method == "DELETE":
         for post in POSTS:
             if post["id"] == id:
@@ -87,6 +97,7 @@ def delete_post(id):
 
 
 def find_post_by_id(id):
+    """Find the post with given id or return None"""
     for post in POSTS:
         if post["id"] == id:
             return post
@@ -112,6 +123,8 @@ def update(id):
 
 @app.route("/api/posts/search", methods=["GET"])
 def search():
+    """Search for specific title or content in database"""
+    # Get the title and content data
     title = request.args.get("title", "").strip()
     content = request.args.get("content", "").strip()
 
@@ -124,11 +137,6 @@ def search():
     if content:
         filtered_posts = [post for post in POSTS if content in post.get("content", "")]
         return jsonify(filtered_posts)
-
-
-# @app.errorhandler(404)
-# def not_found_error(error):
-#     return jsonify({"error:" "Not found"}), 404
 
 
 if __name__ == "__main__":
