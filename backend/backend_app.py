@@ -35,7 +35,7 @@ def get_posts():
     """
     Add a new post to database.
 
-    GET: Returns all posts, sorted or not by choice.
+    GET: Returns all posts, with optional sorting and pagination.
     POST: Adds a new post if input is valid.
     """
     if request.method == "POST":
@@ -49,8 +49,7 @@ def get_posts():
             return jsonify({"error": "Empty title or content"}), 400
 
         # Add new id
-        new_id = get_id()
-        new_post["id"] = new_id
+        new_post["id"] = get_id()
 
         # Add a new post
         POSTS.append(new_post)
@@ -59,22 +58,27 @@ def get_posts():
         return jsonify(new_post), 201
 
     # GET Reguest
-    # Create a sort and direction query parametrs
+    # Create a sort, direction query parametrs and pagination
     sort_by = request.args.get("sort", default="title")
     direction = request.args.get("direction", default="asc")
+    page = int(request.args.get("page", 1))
+    limit = int(request.args.get("limit", 10))
 
-    if sort_by not in ["title", "content"]:
-        return jsonify({"error": f"Sorting by {sort_by} is impossible"}), 400
+    posts = POSTS
 
     if sort_by:
+        if sort_by not in ["title", "content", "id"]:
+            return jsonify({"error": f"Sorting by {sort_by} is impossible"}), 400
         reverse = direction.lower() == "desc"
-        sorted_posts = sorted(
-            POSTS, key=lambda post: post.get(sort_by, ""), reverse=reverse
-        )
-        return jsonify(sorted_posts)
+        posts = sorted(posts, key=lambda post: post.get(sort_by, ""), reverse=reverse)
+
+    if page is not None and limit is not None:
+        start_index = (page - 1) * limit
+        end_index = start_index + limit
+        posts = posts[start_index:end_index]
 
     # GET: Return all posts
-    return jsonify(POSTS)
+    return jsonify(posts)
 
 
 @app.route("/api/posts/<int:id>", methods=["DELETE", "GET"])
