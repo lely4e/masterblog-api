@@ -86,5 +86,34 @@ def delete_post(id):
     return jsonify(POSTS)
 
 
+def find_post_by_id(id):
+    for post in POSTS:
+        if post["id"] == id:
+            return post
+    return None
+
+
+@app.route("/api/posts/<int:id>", methods=["PUT"])
+def update(id):
+    # Find the post in posts
+    post = find_post_by_id(id)
+
+    # if post doesn't found return a 404 error
+    if not post:
+        return jsonify({"error": f"Post with id {id} doesn't found"}), 404
+
+    # Update the post with new data
+    new_data = request.get_json()
+    post.update(new_data)
+
+    # Return a post
+    return jsonify(post)
+
+
+# @app.errorhandler(404)
+# def not_found_error(error):
+#     return jsonify({"error:" "Not found"}), 404
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5002, debug=True)
