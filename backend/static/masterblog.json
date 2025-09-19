@@ -38,9 +38,23 @@
       },
       "post": {
         "summary": "Create a new post",
-        "produces": ["application/json"],
         "tags": ["Post"],
-        "parameters": [{"name": "body", "in": "body", "required": true}],
+        "parameters": [
+            {
+                "name": "body",
+                "in": "body",
+                "required": true,
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                    "category": { "type": "string", "example": "Tech" },
+                    "title": { "type": "string", "example": "New post title" },
+                    "content": { "type": "string", "example": "Post content goes here" }
+                    },
+                    "required": ["category", "title", "content"]
+                }
+            }
+        ],
         "responses": {
             "201": {
                 "description": "Post created"
@@ -58,7 +72,15 @@
             "tags": ["Post"],
             "parameters":[
                 {"name": "id", "in": "path", "required": true, "type": "integer"},
-                {"name": "body", "in": "body", "required": true}
+                {"name": "body", "in": "body", "required": true, "schema": {
+                    "type": "object",
+                    "properties": {
+                    "title": { "type": "string", "example": "New post title" },
+                    "content": { "type": "string", "example": "Post content goes here" }
+                    },
+                    "required": ["title", "content"]
+                }
+            }
         ],
             "responses": {
                 "200": {
@@ -91,7 +113,15 @@
             "tags": ["Comments"],
             "parameters":[
                 {"name": "id", "in": "path", "required": true, "type": "integer"},
-                {"name": "body", "in": "body", "required": true}
+                {"name": "body", "in": "body", "required": true,
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                    "author": { "type": "string", "example": "Mad Max" },
+                    "text": { "type": "string", "example": "Here is your comment" }},
+                    "required": ["author", "text"]
+                }
+        }
         ],
             "responses": {
                 "201": {

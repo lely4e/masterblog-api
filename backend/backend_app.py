@@ -88,7 +88,7 @@ def get_posts():
 
 @app.route("/api/posts/<int:id>", methods=["DELETE"])
 def delete_post(id):
-    """Delete post from database"""
+    """Delete post from database by id"""
     if request.method == "DELETE":
         for post in POSTS:
             if post["id"] == id:
@@ -106,6 +106,7 @@ def delete_post(id):
 
 @app.route("/api/posts/<int:id>", methods=["PUT"])
 def update(id):
+    """Updates post title and content by id"""
     # Find the post in posts
     post = find_post_by_id(id)
 
@@ -143,6 +144,7 @@ def search():
 
 @app.route("/api/posts/<int:id>/comments", methods=["POST"])
 def add_comments(id):
+    """Add comment to the post, creates a unique id"""
     # Data from user
     data = request.get_json()
     if not data or "text" not in data or "author" not in data:
