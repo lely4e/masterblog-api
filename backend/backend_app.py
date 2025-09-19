@@ -2,7 +2,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from data.data import POSTS
 from logic.logic import filtered_posts, find_post_by_id
-from utils.utils import get_id, pagination, sort_by_choice
+from utils.utils import get_id, pagination, sort_by_choice, get_comments_id
 from validators.post_validator import validate_posts_data
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -115,6 +115,7 @@ def search():
     # Get the title and content data
     title = request.args.get("title", "").strip()
     content = request.args.get("content", "").strip()
+    category = request.args.get("category", "").strip()
 
     if title:
         return jsonify(filtered_posts("title", title))
@@ -122,7 +123,36 @@ def search():
     if content:
         return jsonify(filtered_posts("content", content))
 
+    if category:
+        return jsonify(filtered_posts("category", category))
+
     return jsonify({"error": "There are no parameters"}), 400
+
+
+@app.route("/api/posts/<int:id>/comments", methods=["POST"])
+def add_comments(id):
+    # Data from user
+    data = request.get_json()
+    if not data or "text" not in data or "author" not in data:
+        return jsonify({"error": "Text or Author is missing"}), 400
+
+    text = data.get("text", "").strip()
+    author = data.get("author", "").strip()
+
+    if not "text" or not "author":
+        return jsonify({"error": "Text or Author is missing"}), 400
+
+    for post in POSTS:
+        if post["id"] == id:
+            comment_id = get_comments_id(post)
+            new_comment = {
+                "id": comment_id,
+                "text": text,
+                "author": author,
+            }
+            post["comments"].append(new_comment)
+            return jsonify(new_comment), 201
+    return jsonify({"error": "Page not found"}), 404
 
 
 @app.errorhandler(429)

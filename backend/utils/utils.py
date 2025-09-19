@@ -12,6 +12,21 @@ def get_id():
     )
 
 
+def get_comments_id(post):
+    """Gets the maximum id in posts and generate a new one by adding 1"""
+    return (
+        max(
+            (
+                comment.get("id")
+                for comment in post.get("comments", [])
+                if isinstance(comment.get("id"), int)
+            ),
+            default=0,
+        )
+        + 1
+    )
+
+
 def pagination(data, page, limit):
     """Pagination"""
     start_index = (page - 1) * limit
