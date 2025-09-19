@@ -4,13 +4,25 @@ from data.data import POSTS
 from logic.logic import filtered_posts, find_post_by_id
 from utils.utils import get_id, pagination, sort_by_choice
 from validators.post_validator import validate_posts_data
-
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+import logging
 
 app = Flask(__name__)
 CORS(app)  # This will enable CORS for all routes
 
+limiter = Limiter(app=app, key_func=get_remote_address)
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+
 
 @app.route("/api/posts", methods=["GET", "POST"])
+@limiter.limit("10/minute")  # Limit to 10 requests per minute
 def get_posts():
     """
     Add a new post to database.
@@ -38,6 +50,9 @@ def get_posts():
         return jsonify(new_post), 201
 
     # GET Reguest
+    # Log a message
+    app.logger.info("GET request received for /api/posts")
+
     # Create a sort, direction query parametrs and pagination
     sort_by = request.args.get("sort", default="title")
     direction = request.args.get("direction", default="asc")
@@ -108,6 +123,18 @@ def search():
         return jsonify(filtered_posts("content", content))
 
     return jsonify({"error": "There are no parameters"}), 400
+
+
+@app.errorhandler(429)
+def ratelimit_error(e):
+    return (
+        jsonify(
+            {
+                "error": "To many requests, try again later",
+            }
+        ),
+        429,
+    )
 
 
 if __name__ == "__main__":
