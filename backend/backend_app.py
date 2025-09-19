@@ -1,33 +1,13 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from data.data import POSTS
+from logic.logic import filtered_posts, find_post_by_id
+from utils.utils import get_id, pagination, sort_by_choice
+from validators.post_validator import validate_posts_data
+
 
 app = Flask(__name__)
 CORS(app)  # This will enable CORS for all routes
-
-POSTS = [
-    {"id": 1, "title": "First post", "content": "This is the first post."},
-    {"id": 2, "title": "Second post", "content": "This is the second post."},
-]
-
-
-def get_id():
-    """Gets the maximum id in posts and generate a new one by adding 1"""
-    return (
-        max(
-            (post.get("id") for post in POSTS if isinstance(post.get("id"), int)),
-            default=0,
-        )
-        + 1
-    )
-
-
-def validate_posts_data(data):
-    """Input Validation from the user"""
-    if "title" not in data or "content" not in data:
-        return False
-    if not data["title"].strip() or not data["content"].strip():
-        return False
-    return True
 
 
 @app.route("/api/posts", methods=["GET", "POST"])
@@ -69,13 +49,10 @@ def get_posts():
     if sort_by:
         if sort_by not in ["title", "content", "id"]:
             return jsonify({"error": f"Sorting by {sort_by} is impossible"}), 400
-        reverse = direction.lower() == "desc"
-        posts = sorted(posts, key=lambda post: post.get(sort_by, ""), reverse=reverse)
+        posts = sort_by_choice(posts, sort_by, direction)
 
     if page is not None and limit is not None:
-        start_index = (page - 1) * limit
-        end_index = start_index + limit
-        posts = posts[start_index:end_index]
+        posts = pagination(posts, page, limit)
 
     # GET: Return all posts
     return jsonify(posts)
@@ -98,14 +75,6 @@ def delete_post(id):
                 )
         return jsonify({"error": f"Post with id {id} doesn't exist"}), 404
     return jsonify(POSTS)
-
-
-def find_post_by_id(id):
-    """Find the post with given id or return None"""
-    for post in POSTS:
-        if post["id"] == id:
-            return post
-    return None
 
 
 @app.route("/api/posts/<int:id>", methods=["PUT"])
@@ -133,14 +102,12 @@ def search():
     content = request.args.get("content", "").strip()
 
     if title:
-        filtered_posts = [
-            post for post in POSTS if title.lower() in post.get("title", "").lower()
-        ]
-        return jsonify(filtered_posts)
+        return jsonify(filtered_posts("title", title))
 
     if content:
-        filtered_posts = [post for post in POSTS if content in post.get("content", "")]
-        return jsonify(filtered_posts)
+        return jsonify(filtered_posts("content", content))
+
+    return jsonify({"error": "There are no parameters"}), 400
 
 
 if __name__ == "__main__":
