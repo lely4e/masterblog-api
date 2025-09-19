@@ -1,4 +1,5 @@
 from flask import Flask, jsonify, request
+from flask_swagger_ui import get_swaggerui_blueprint
 from flask_cors import CORS
 from data.data import POSTS
 from logic.logic import filtered_posts, find_post_by_id
@@ -8,8 +9,19 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 import logging
 
+
 app = Flask(__name__)
 CORS(app)  # This will enable CORS for all routes
+
+SWAGGER_URL = "/api/docs"  # (1) swagger endpoint e.g. HTTP://localhost:5002/api/docs
+API_URL = "/static/masterblog.json"  # (2) ensure you create this dir and file
+
+swagger_ui_blueprint = get_swaggerui_blueprint(
+    SWAGGER_URL,
+    API_URL,
+    config={"app_name": "Masterblog API"},  # (3) You can change this if you like
+)
+app.register_blueprint(swagger_ui_blueprint, url_prefix=SWAGGER_URL)
 
 limiter = Limiter(app=app, key_func=get_remote_address)
 
@@ -42,6 +54,7 @@ def get_posts():
 
         # Add new id
         new_post["id"] = get_id()
+        new_post["comments"] = []
 
         # Add a new post
         POSTS.append(new_post)
@@ -73,7 +86,7 @@ def get_posts():
     return jsonify(posts)
 
 
-@app.route("/api/posts/<int:id>", methods=["DELETE", "GET"])
+@app.route("/api/posts/<int:id>", methods=["DELETE"])
 def delete_post(id):
     """Delete post from database"""
     if request.method == "DELETE":
@@ -89,7 +102,6 @@ def delete_post(id):
                     200,
                 )
         return jsonify({"error": f"Post with id {id} doesn't exist"}), 404
-    return jsonify(POSTS)
 
 
 @app.route("/api/posts/<int:id>", methods=["PUT"])
