@@ -49,8 +49,10 @@ def get_posts():
         # Input Validation
         if not new_post:
             return jsonify({"error": "Empty post data"}), 400
-        if not validate_posts_data(new_post):
-            return jsonify({"error": "Empty title, content or category"}), 400
+
+        errors = validate_posts_data(new_post)
+        if errors:
+            return jsonify({"errors": errors}), 400
 
         # Add new id
         new_post["id"] = get_id()
